@@ -81,11 +81,7 @@ footer{background:#000;padding:20px;text-align:center;border-top:3px solid #c59d
 <input type="text" id="datePicker" name="date" placeholder="Select Date" required readonly>
 <select name="time" required>
 <option value="">Select Time</option>
-<option>10:40 AM</option>
-<option>11:00 AM</option>
-<option>11:20 AM</option>
-<option>11:40 AM</option>
-<option>12:00 PM</option>
+<option value="10:40 AM">10:40 AM</option>
 </select>
 <select name="barber" required>
 <option value="">Select Barber</option>
@@ -120,17 +116,16 @@ flatpickr("#datePicker", {
 // Load booked slots from localStorage
 let bookedSlots = JSON.parse(localStorage.getItem('bookedSlots')) || {};
 
-// Disable all time options if date is already booked
 const datePicker = document.getElementById('datePicker');
 const timeSelect = document.querySelector('select[name="time"]');
 
 datePicker.addEventListener('change', () => {
   const selectedDate = datePicker.value;
-  Array.from(timeSelect.options).forEach(opt => opt.disabled = false); // reset
-
-  if(bookedSlots[selectedDate] && bookedSlots[selectedDate].length > 0) {
-    // All times disabled if someone already booked this date
-    Array.from(timeSelect.options).forEach(opt => { if(opt.value) opt.disabled = true; });
+  // If already booked, disable the single time option
+  if(bookedSlots[selectedDate]) {
+    timeSelect.options[1].disabled = true; // only one time option
+  } else {
+    timeSelect.options[1].disabled = false;
   }
 });
 
@@ -139,19 +134,16 @@ document.getElementById("bookingForm").addEventListener("submit", function(e){
 
   const selectedDate = datePicker.value;
 
-  // Check if date is already booked
-  if(bookedSlots[selectedDate] && bookedSlots[selectedDate].length > 0) {
+  if(bookedSlots[selectedDate]) {
     document.getElementById("errorMessage").classList.remove("hidden");
     return;
   }
 
   const selectedTime = timeSelect.value;
 
-  // Save booking
-  bookedSlots[selectedDate] = [selectedTime]; // only one slot per date
+  bookedSlots[selectedDate] = [selectedTime];
   localStorage.setItem('bookedSlots', JSON.stringify(bookedSlots));
 
-  // Send Email
   emailjs.send("service_8w8oobs","template_ru4etqn",{
     customer_name:this.name.value,
     customer_email:this.email.value,
@@ -164,7 +156,7 @@ document.getElementById("bookingForm").addEventListener("submit", function(e){
     document.getElementById("successMessage").classList.remove("hidden");
     document.getElementById("errorMessage").classList.add("hidden");
     document.getElementById("bookingForm").reset();
-    Array.from(timeSelect.options).forEach(opt => opt.disabled = false); // reset for next
+    timeSelect.options[1].disabled = false; // reset
   }, function(error){
     alert("Booking failed. Check EmailJS setup.");
   });
