@@ -96,6 +96,7 @@ footer{background:#000;padding:20px;text-align:center;border-top:3px solid #c59d
 
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
+<script>
 (function(){
   emailjs.init("jeP077xtvGHOcgIhO");
 })();
@@ -104,15 +105,13 @@ footer{background:#000;padding:20px;text-align:center;border-top:3px solid #c59d
 let bookedDates = JSON.parse(localStorage.getItem('bookedDates')) || [];
 
 // Initialize Flatpickr: only disable booked dates
-const fp = flatpickr("#datePicker", {
+flatpickr("#datePicker", {
   minDate: "today",
   dateFormat: "F j, Y",
-  disable: [
-    function(date) {
-      const formatted = fp.formatDate(date, "F j, Y");
-      return bookedDates.includes(formatted); // disable only booked days
-    }
-  ]
+  disable: bookedDates.map(dateStr => {
+    // Convert each booked date string to a Date object
+    return new Date(dateStr);
+  })
 });
 
 document.getElementById("bookingForm").addEventListener("submit", function(e){
@@ -131,6 +130,9 @@ document.getElementById("bookingForm").addEventListener("submit", function(e){
   bookedDates.push(selectedDate);
   localStorage.setItem('bookedDates', JSON.stringify(bookedDates));
 
+  // Refresh Flatpickr to disable the new booked date
+  dateInput._flatpickr.set('disable', bookedDates.map(d => new Date(d)));
+
   // Send email via EmailJS
   emailjs.send("service_8w8oobs","template_ru4etqn",{
     customer_name: this.name.value,
@@ -143,19 +145,12 @@ document.getElementById("bookingForm").addEventListener("submit", function(e){
   }).then(function(){
     document.getElementById("successMessage").classList.remove("hidden");
     document.getElementById("bookingForm").reset();
-    fp.clear();
+    dateInput._flatpickr.clear();
   }, function(error){
     alert("Booking failed. Check EmailJS setup.");
   });
-
-  // Refresh Flatpickr to disable the new booked date
-  fp.set('disable', [
-    function(date) {
-      const formatted = fp.formatDate(date, "F j, Y");
-      return bookedDates.includes(formatted);
-    }
-  ]);
 });
+</script>
 </script>
 
 </body>
